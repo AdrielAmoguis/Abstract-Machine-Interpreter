@@ -1,6 +1,14 @@
 import re
 from aux_data_structures import Stack, Queue, Tape
 
+class Instruction:
+    def __init__(self, instruction, arguments):
+        self.instruction = instruction
+        self.arguments = arguments
+
+    def __str__(self):
+        return self.instruction + " " + str(self.arguments)
+
 class InputParser:
     def __init__(self, input_string):
         self.input_string = input_string
@@ -59,7 +67,7 @@ class InputParser:
         aux_data = self.parse_data()
         logic = self.parse_logic()
 
-        return { aux_data, logic }
+        return { "aux_data": aux_data, "logic": logic }
 
     def parse_data(self):
         # Parse the data section
@@ -85,6 +93,10 @@ class InputParser:
 
             # Get data structure name
             data_structure_name = declarations[1]
+
+            # Raise error if data structure already exists
+            if data_structure_name in data_structures:
+                raise SyntaxError("Data structure " + data_structure_name + " already exists at line " + str(self.iterator_line))
 
             # Create data structure
             if data_structure_type == "STACK":
