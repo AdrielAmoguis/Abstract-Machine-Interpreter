@@ -1,14 +1,6 @@
 import re
 from aux_data_structures import Stack, Queue, Tape
 
-class Instruction:
-    def __init__(self, instruction, arguments):
-        self.instruction = instruction
-        self.arguments = arguments
-
-    def __str__(self):
-        return self.instruction + " " + str(self.arguments)
-
 class InputParser:
     def __init__(self, input_string):
         self.input_string = input_string
@@ -22,17 +14,25 @@ class InputParser:
         self.iterator_line = 0
         self.current_context_space = "GLOBAL"
 
-    def iterate_line(self):
+    def iterate_line(self, verbose=False):
         # Read line until not blank or comment
-        while self.input_lines[self.iterator_line] == "" or re.match("\s*//", self.input_lines[self.iterator_line]):
+        while self.iterator_line < len(self.input_lines) and (self.input_lines[self.iterator_line] == "" or re.match("\s*//", self.input_lines[self.iterator_line])):
             self.iterator_line += 1
 
-        while True:
+        while self.iterator_line < len(self.input_lines):
             line = self.input_lines[self.iterator_line]
-            # print("Iterator read: " + line + " (" + str(self.iterator_line) + ")")
+            if verbose: print("Iterator read: " + line + " (" + str(self.iterator_line) + ")")
 
             # Increment iterator
             self.iterator_line += 1
+
+            # If blank line, continue
+            if line == "":
+                continue
+
+            # If comment, continue
+            if re.match("\s*//", line):
+                continue
 
             # Check if we're in a non-global context    
             if self.current_context_space == "GLOBAL":
@@ -42,21 +42,19 @@ class InputParser:
                 else:
                     # Assign new context
                     self.current_context_space = line[1:]
-                    # print("Context changed to " + self.current_context_space)
-                    continue
+                    if verbose: print("Context changed to " + self.current_context_space)
+                return line
             elif self.current_context_space == "DATA":
                 # Check for context change
                 if re.match("\.LOGIC", line):
                     self.current_context_space = "LOGIC"
-                    # print("Context changed to " + self.current_context_space)
-                    continue
+                    if verbose: print("Context changed to " + self.current_context_space)
                 return line
             elif self.current_context_space == "LOGIC":
                 # Check for context change
                 if re.match("\.DATA", line):
                     self.current_context_space = "DATA"
-                    # print("Context changed to " + self.current_context_space)
-                    continue
+                    if verbose: print("Context changed to " + self.current_context_space)
                 return line
                 
     def parse(self):
@@ -80,6 +78,10 @@ class InputParser:
         
         while self.current_context_space == "DATA":
             line = self.iterate_line()
+
+            # Break if end of context
+            if line == None or self.current_context_space != "DATA":
+                break
             
             # Ignore empty line
             if line == "":
@@ -87,6 +89,10 @@ class InputParser:
             
             # Split declaration by spaces
             declarations = line.split(" ")
+
+            # If more than 2 arguments, raise error
+            if len(declarations) > 2:
+                raise SyntaxError("Too many arguments for declaration at line " + str(self.iterator_line))
 
             # Get data structure type
             data_structure_type = declarations[0]
@@ -120,9 +126,55 @@ class InputParser:
 
     def parse_logic(self):
         # Parse the logic section
-        pass
+        self.reset_iterator()
+
+        logic = {}
+
+        while self.current_context_space != "LOGIC":
+            self.iterate_line()
+
+        while self.current_context_space == "LOGIC":
+            line = self.iterate_line()
+
+            # Break if end of context
+            if line == None or self.current_context_space != "LOGIC":
+                break
+            
+            # Ignore empty line
+            if line == "":
+                continue
+
+            # Read the states
+            # State format: <state_name>] <instruction> <arguments>
+
+            # Split line by spaces
+            line_split = line.split(" ")
+
+            # Get state name
+            state_name = line_split[0][:-1]
+
+            # Raise error if state already exists
+            if state_name in logic:
+                raise SyntaxError("State " + state_name + " already exists at line " + str(self.iterator_line))
+
+            # Get instruction
+            instruction = line_split[1]
+
+            # Get arguments
+            arguments = list(map(lambda x: x.strip()[:-1] if x.strip()[-1] == ',' else x.strip(), line_split[2:]))
+
+            # Create instruction object
+            logic[state_name] = {
+                "instruction": instruction,
+                "arguments": arguments
+            }
+
+        return logic
 
     def check_syntax(self):
+        # Reset iterator
+        self.reset_iterator()
+
         # Check for syntax errors
         for i in range(len(self.input_lines)):
             # Check for empty lines
