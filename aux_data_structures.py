@@ -100,3 +100,10 @@ class Tape:
 
     def __str__(self):
         return str(self.tape)
+    
+class InputTape(Tape):
+    def __init__(self, input_string):
+        super().__init__()
+        for i in range(len(input_string)):
+            self.tape[i] = input_string[i]
+        self.head = 0

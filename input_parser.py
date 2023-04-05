@@ -10,6 +10,27 @@ class InputParser:
         self.current_context_space = "GLOBAL"
         self.iterator_line = 0
 
+        self.data_keywords = [
+            "STACK",
+            "QUEUE",
+            "TAPE"
+        ]
+        self.data_keywords = re.compile("^" + "|".join(self.data_keywords))
+
+        self.command_keywords = [
+            "SCAN LEFT",
+            "SCAN RIGHT",
+            "SCAN",
+            "PRINT",
+            "READ",
+            "WRITE",
+            "RIGHT",
+            "LEFT",
+            "UP",
+            "DOWN"
+        ]
+        self.command_keywords = re.compile("^\s*(" + "|".join(self.command_keywords) + ")")
+
     def reset_iterator(self):
         self.iterator_line = 0
         self.current_context_space = "GLOBAL"
@@ -120,6 +141,8 @@ class InputParser:
                     "type": "TAPE",
                     "data": Tape()
                 }
+            else:
+                raise SyntaxError("Invalid data structure type at line " + str(self.iterator_line))
 
         return data_structures
                 
@@ -147,26 +170,30 @@ class InputParser:
             # Read the states
             # State format: <state_name>] <instruction> <arguments>
 
-            # Split line by spaces
-            line_split = line.split(" ")
+            # Find the first ] in the line
+            state_end = line.find("]")
+            if state_end == -1:
+                raise SyntaxError("Expected ] at line " + str(self.iterator_line))
+            state_name = line[:state_end]
+            line = line[state_end + 1:]
 
-            # Get state name
-            state_name = line_split[0][:-1]
+            # RegEx matching to look for command
+            command_matches = self.command_keywords.findall(line.upper())
+            if len(command_matches) == 0:
+                raise SyntaxError("Expected command at line " + str(self.iterator_line))
+            instruction = command_matches[0]
+
+            # Get arguments
+            arguments_idx = re.findall("\([^\s]*,[^\s]*\)", line)
 
             # Raise error if state already exists
             if state_name in logic:
                 raise SyntaxError("State " + state_name + " already exists at line " + str(self.iterator_line))
-
-            # Get instruction
-            instruction = line_split[1]
-
-            # Get arguments
-            arguments = list(map(lambda x: x.strip()[:-1] if x.strip()[-1] == ',' else x.strip(), line_split[2:]))
-
+            
             # Create instruction object
             logic[state_name] = {
                 "instruction": instruction,
-                "arguments": arguments
+                "arguments": arguments_idx
             }
 
         return logic
