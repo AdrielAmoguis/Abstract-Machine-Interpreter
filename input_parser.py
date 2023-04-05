@@ -22,12 +22,12 @@ class InputParser:
             "SCAN RIGHT",
             "SCAN",
             "PRINT",
-            "READ",
-            "WRITE",
-            "RIGHT",
-            "LEFT",
-            "UP",
-            "DOWN"
+            "READ\([a-zA-Z0-9_]{1,}\)",
+            "WRITE\([a-zA-Z0-9_]{1,}\)",
+            "RIGHT\([a-zA-Z0-9_]{1,}\)",
+            "LEFT\([a-zA-Z0-9_]{1,}\)",
+            "UP\([a-zA-Z0-9_]{1,}\)",
+            "DOWN\([a-zA-Z0-9_]{1,}\)"
         ]
         self.command_keywords = re.compile("^\s*(" + "|".join(self.command_keywords) + ")")
 
@@ -129,17 +129,14 @@ class InputParser:
             if data_structure_type == "STACK":
                 data_structures[data_structure_name] = {
                     "type": "STACK",
-                    "data": Stack()
                 }
             elif data_structure_type == "QUEUE":
                 data_structures[data_structure_name] = {
                     "type": "QUEUE",
-                    "data": Queue()
                 }
             elif data_structure_type == "TAPE":
                 data_structures[data_structure_name] = {
                     "type": "TAPE",
-                    "data": Tape()
                 }
             else:
                 raise SyntaxError("Invalid data structure type at line " + str(self.iterator_line))
@@ -177,8 +174,8 @@ class InputParser:
             state_name = line[:state_end]
             line = line[state_end + 1:]
 
-            # RegEx matching to look for command
-            command_matches = self.command_keywords.findall(line.upper())
+            # RegEx matching to look for command)
+            command_matches = self.command_keywords.findall(line)
             if len(command_matches) == 0:
                 raise SyntaxError("Expected command at line " + str(self.iterator_line))
             instruction = command_matches[0]
