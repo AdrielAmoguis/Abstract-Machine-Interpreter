@@ -99,7 +99,15 @@ class Tape:
         return self.head
 
     def __str__(self):
-        return str(self.tape)
+        retstring = ""
+
+        for key in self.tape.keys():
+            if key == self.head:
+                retstring += "[" + self.tape[key] + "]"
+            else:
+                retstring += self.tape[key]
+
+        return retstring
     
 class InputTape(Tape):
     def __init__(self, input_string):

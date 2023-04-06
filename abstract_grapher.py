@@ -23,6 +23,7 @@ def build_edge_list(logic):
             edge_list.append((key, transition[1], {'w': transition[0]}))
     return edge_list
 
+# The following code has been taken from StackOverflow.
 def my_draw_networkx_edge_labels(
     G,
     pos,
@@ -198,7 +199,7 @@ def graph_abstract_machine(logic):
     edge_list = build_edge_list(logic)
     G.add_edges_from(edge_list)
     pos = nx.spring_layout(G)
-    nx.draw_networkx_nodes(G, pos)
+    nx.draw_networkx_nodes(G, pos, node_color="yellow")
     nx.draw_networkx_labels(G, pos)
     curved_edges = [edge for edge in G.edges() if reversed(edge) in G.edges()]
     straight_edges = list(set(G.edges()) - set(curved_edges))

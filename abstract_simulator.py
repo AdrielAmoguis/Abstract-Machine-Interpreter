@@ -11,6 +11,7 @@ class AbstractMachineSimulator:
         self.aux_data = machine_definition["aux_data"]
 
         # Lifecycle
+        self.accepted = False
         self.halted = False
         self.current_state = None
         self.input_tapehead_idx = 0
@@ -78,9 +79,9 @@ class AbstractMachineSimulator:
             self.current_state = first_state
             if verbose: print("Starting at state " + first_state)
             # Read the first sharp
-            if(self.input_tape.read() != "#"):
-                raise Exception("Input tape must start with #")
-            print("Read first #")
+            # if(self.input_tape.read() != "#"):
+            #     raise Exception("Input tape must start with #")
+            # print("Read first #")
 
         # Get the current state
         current_state = self.state_map[self.current_state]
@@ -95,6 +96,84 @@ class AbstractMachineSimulator:
 
         # Execute the instruction
         if instruction == "SCAN":
-            symbol_buffer = self.input_tape.read()
             self.input_tape.move("R")
+            symbol_buffer = self.input_tape.read()
             if verbose: print("Read symbol " + symbol_buffer)
+        elif instruction == "WRITE":
+            if associated_data == None:
+                raise Exception("WRITE instruction requires associated data")
+            # Get the data type and write accordingly
+            if isinstance(self.aux_data[associated_data], Stack):
+                self.aux_data[associated_data].push(symbol_buffer)
+            elif isinstance(self.aux_data[associated_data], Queue):
+                self.aux_data[associated_data].enqueue(symbol_buffer)
+            elif isinstance(self.aux_data[associated_data], Tape):
+                self.aux_data[associated_data].write(symbol_buffer)
+            if verbose: print("Wrote symbol " + symbol_buffer + " to " + associated_data)
+        elif instruction == "READ":
+            if associated_data == None:
+                raise Exception("READ instruction requires associated data")
+            # Get the data type and read accordingly
+            if isinstance(self.aux_data[associated_data], Stack):
+                symbol_buffer = self.aux_data[associated_data].pop()
+            elif isinstance(self.aux_data[associated_data], Queue):
+                symbol_buffer = self.aux_data[associated_data].dequeue()
+            elif isinstance(self.aux_data[associated_data], Tape):
+                symbol_buffer = self.aux_data[associated_data].read()
+            if verbose: print("Read symbol " + symbol_buffer + " from " + associated_data)
+        elif instruction == "PRINT":
+            # Print the symbol buffer
+            print(symbol_buffer)
+            if verbose: print("Printed symbol " + symbol_buffer)
+        elif instruction == "SCAN RIGHT":
+            # Move the tape head right
+            self.input_tape.move("R")
+            symbol_buffer = self.input_tape.read()
+            if verbose: print("Read symbol " + symbol_buffer + " from the right")
+        elif instruction == "SCAN LEFT":
+            # Move the tape head left
+            self.input_tape.move("L")
+            symbol_buffer = self.input_tape.read()
+            if verbose: print("Read symbol " + symbol_buffer + " from the left")
+        elif instruction == "RIGHT":
+            # Move the associated data head right
+            if associated_data == None:
+                raise Exception("RIGHT instruction requires associated data")
+            self.aux_data[associated_data].move("R")
+            symbol_buffer = self.aux_data[associated_data].read()
+            if verbose: print("Moved " + associated_data + " head right")
+        elif instruction == "LEFT":
+            # Move the associated data head left
+            if associated_data == None:
+                raise Exception("LEFT instruction requires associated data")
+            self.aux_data[associated_data].move("L")
+            symbol_buffer = self.aux_data[associated_data].read()
+            if verbose: print("Moved " + associated_data + " head left")
+        
+        # Check the available transitions for the symbol buffer
+        if symbol_buffer in transitions.keys():
+            
+            # If accepting state, halt the machine
+            if transitions[symbol_buffer].lower() == "accept":
+                self.halted = True
+                self.accepted = True
+                if verbose: print("Accepting state reached. Machine halted.")
+                return False
+            
+            # If rejecting state, halt the machine
+            if transitions[symbol_buffer].lower() == "reject":
+                self.halted = True
+                self.accepted = False
+                if verbose: print("Rejecting state reached. Machine halted.")
+                return False
+
+            # Get the transition and go to next state
+            self.current_state = transitions[symbol_buffer]
+            if verbose: print("Transitioning to state " + self.current_state)
+            
+            return False
+        else:
+            # If there is no transition, halt
+            self.halted = True
+            if verbose: print("No transition found for this symbol. Machine halted.")
+            return False
