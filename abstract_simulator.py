@@ -54,7 +54,7 @@ class AbstractMachineSimulator:
             else:
                 self.state_map[key]["instruction"] = self.logic[key]["instruction"]
 
-    def set_input_tape(self, input_tape):
+    def set_input_tape(self, input_tape, is_turing_machine=False):
         # Ensure that the input tape is a string with the first and last character as #
         if not isinstance(input_tape, str):
             raise Exception("Input tape must be a string")
@@ -63,6 +63,13 @@ class AbstractMachineSimulator:
         
         # Turn the input tape into a Tape of type InputTape
         self.input_tape = InputTape(input_tape)
+
+        # If this is a Turing machine, set the input tape to the first declared tape aux data
+        if is_turing_machine:
+            for key in self.aux_data.keys():
+                if self.aux_data[key]["type"] == "TAPE":
+                    self.memory[key] = self.input_tape
+                    break
 
     def step(self, verbose=False) -> bool:
         # If the input tape is not set yet, raise an error
@@ -129,11 +136,11 @@ class AbstractMachineSimulator:
             symbol_buffer = list(keys)[0]
 
             # Get the data type and write accordingly
-            if isinstance(self.aux_data[associated_data], Stack):
-                self.aux_data[associated_data].push(symbol_buffer)
-            elif isinstance(self.aux_data[associated_data], Queue):
-                self.aux_data[associated_data].enqueue(symbol_buffer)
-            elif isinstance(self.aux_data[associated_data], Tape):
+            if isinstance(self.memory[associated_data], Stack):
+                self.memory[associated_data].push(symbol_buffer)
+            elif isinstance(self.memory[associated_data], Queue):
+                self.memory[associated_data].enqueue(symbol_buffer)
+            elif isinstance(self.memory[associated_data], Tape):
                 raise Exception("Tape is not a valid data type for WRITE instruction")
             if verbose: print("Wrote symbol " + symbol_buffer + " to " + associated_data)
 
@@ -145,11 +152,11 @@ class AbstractMachineSimulator:
             if associated_data == None:
                 raise Exception("READ instruction requires associated data")
             # Get the data type and read accordingly
-            if isinstance(self.aux_data[associated_data], Stack):
-                symbol_buffer = self.aux_data[associated_data].pop()
-            elif isinstance(self.aux_data[associated_data], Queue):
-                symbol_buffer = self.aux_data[associated_data].dequeue()
-            elif isinstance(self.aux_data[associated_data], Tape):
+            if isinstance(self.memory[associated_data], Stack):
+                symbol_buffer = self.memory[associated_data].pop()
+            elif isinstance(self.memory[associated_data], Queue):
+                symbol_buffer = self.memory[associated_data].dequeue()
+            elif isinstance(self.memory[associated_data], Tape):
                 raise Exception("Tape is not a valid data type for READ instruction")
             if verbose: print("Read symbol " + symbol_buffer + " from " + associated_data)
 
@@ -206,51 +213,62 @@ class AbstractMachineSimulator:
                 
         elif instruction == "RIGHT":
             # Assert that the symbol buffer is not empty and associated data is a tape
-            if symbol_buffer == "":
-                raise Exception("Symbol buffer is empty")
-            if not isinstance(self.aux_data[associated_data], Tape):
+            if not isinstance(self.memory[associated_data], Tape):
                 raise Exception("Associated data must be a tape")
             # Move the tape head right
-            self.aux_data[associated_data].move("R")
+            self.memory[associated_data].move("R")
             # Read
-            symbol_buffer = self.aux_data[associated_data].read()
+            symbol_buffer = self.memory[associated_data].read()
             if verbose: print("Read symbol " + symbol_buffer + " from the right")
             # Find this symbol in the available transitions
             keys = list(map(lambda x: (x.split("/")[0], x.split("/")[1]), transitions.keys()))
-            if len(keys > 0):
+            keys = list(filter(lambda x: x[0] == symbol_buffer, keys))
+            if len(keys) > 1:
                 raise Exception("More than one transition for a symbol. Non-determinism is not supported.")
             
-            # Get the transition and go to next state
-            self.current_state = transitions[keys[0][0]]
-            if verbose: print("Transitioning to state " + self.current_state)
-
             # Replace the symbol in the tape with the symbol in the transition
-            self.aux_data[associated_data].write(keys[0][1])
-            if verbose: print("Replaced symbol " + symbol_buffer + " with " + keys[0][1])
+            if len(keys[0]) > 1:
+                # Get the transition and go to next state
+                self.current_state = transitions[str(keys[0][0]) + "/" + str(keys[0][1])]
+                self.memory[associated_data].write(keys[0][1])
+                if verbose: print("Replaced symbol " + symbol_buffer + " with " + keys[0][1])
+                if verbose: print("Transitioning to state " + self.current_state)
+            else:
+                # Get the transition and go to next state
+                self.current_state = transitions[keys[0][0]]
+                if verbose: print("Transitioning to state " + self.current_state)
 
         elif instruction == "LEFT":
             # Assert that the symbol buffer is not empty and associated data is a tape
-            if symbol_buffer == "":
-                raise Exception("Symbol buffer is empty")
-            if not isinstance(self.aux_data[associated_data], Tape):
+            if not isinstance(self.memory[associated_data], Tape):
                 raise Exception("Associated data must be a tape")
             # Move the tape head left
-            self.aux_data[associated_data].move("L")
+            self.memory[associated_data].move("L")
             # Read
-            symbol_buffer = self.aux_data[associated_data].read()
+            symbol_buffer = self.memory[associated_data].read()
             if verbose: print("Read symbol " + symbol_buffer + " from the left")
             # Find this symbol in the available transitions
             keys = list(map(lambda x: (x.split("/")[0], x.split("/")[1]), transitions.keys()))
-            if len(keys > 1):
+            keys = list(filter(lambda x: x[0] == symbol_buffer, keys))
+            if len(keys) > 1:
                 raise Exception("More than one transition for a symbol. Non-determinism is not supported.")
             
-            # Get the transition and go to next state
-            self.current_state = transitions[keys[0][0]]
-            if verbose: print("Transitioning to state " + self.current_state)
-
             # Replace the symbol in the tape with the symbol in the transition
-            self.aux_data[associated_data].write(keys[0][1])
-            if verbose: print("Replaced symbol " + symbol_buffer + " with " + keys[0][1])
+            if len(keys[0]) > 1:
+                # Get the transition and go to next state
+                self.current_state = transitions[str(keys[0][0]) + "/" + str(keys[0][1])]
+                self.memory[associated_data].write(keys[0][1])
+                if verbose: print("Replaced symbol " + symbol_buffer + " with " + keys[0][1])
+                if verbose: print("Transitioning to state " + self.current_state)
+            else:
+                # Get the transition and go to next state
+                self.current_state = transitions[keys[0][0]]
+                if verbose: print("Transitioning to state " + self.current_state)
 
         else:
             raise Exception("Instruction not supported.")
+        
+    def run(self, verbose=False):
+        """Runs the machine until it halts"""
+        while not self.halted:
+            self.step(verbose=verbose)

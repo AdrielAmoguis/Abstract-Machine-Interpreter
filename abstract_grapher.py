@@ -195,6 +195,7 @@ def my_draw_networkx_edge_labels(
     return text_items
 
 def graph_abstract_machine(logic):
+    plt.figure(figsize=(10,10))
     G = nx.DiGraph()
     edge_list = build_edge_list(logic)
     G.add_edges_from(edge_list)
