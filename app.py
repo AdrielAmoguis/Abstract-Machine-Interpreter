@@ -9,6 +9,7 @@
 
 # Dependency Imports
 import sys, os, time
+from threading import Thread
 from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QPlainTextEdit, QLineEdit, QGroupBox, QFormLayout, QPushButton, QLayout
 from PyQt6.QtGui import QPixmap, QFontDatabase
 from PyQt6 import QtCore
@@ -126,16 +127,12 @@ def run_machine():
 def slow_run_machine():
     global machine_instance
     try:
-        while True:
-            # Check if machine is halted
-            if machine_instance.halted:
-                log("Machine is halted.")
-                return
-
-            machine_instance.step()
-            log("Machine step successfully.")
-            update_memory_inspector()
-            time.sleep(1)
+        # Run the "step_machine" function in a separate thread
+        def run():
+            while not machine_instance.halted:
+                step_machine()
+                time.sleep(0.5)
+        Thread(target=run).start()
     except Exception as e:
         log("Error: " + str(e))
 
