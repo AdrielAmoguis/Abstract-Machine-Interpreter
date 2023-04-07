@@ -94,7 +94,7 @@ class InputParser:
 
         data_structures = {}
         
-        while self.current_context_space != "DATA":
+        while self.current_context_space != "DATA" and self.iterator_line < len(self.input_lines):
             self.iterate_line()
         
         while self.current_context_space == "DATA":
