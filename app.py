@@ -44,6 +44,10 @@ def update_memory_inspector():
         memory_inspector.appendPlainText("Tape Head:  " + str(" " * machine_instance.input_tape.head) + " ^")
         memory_inspector.appendPlainText("")
 
+        # Display current state
+        memory_inspector.appendPlainText("Current State: " + str(machine_instance.current_state or list(machine_instance.state_map.keys())[0]))
+        memory_inspector.appendPlainText("")
+
         if len(machine_instance.memory.keys()) < 1:
             memory_inspector.appendPlainText("No auxiliary memory used.")
         for key in machine_instance.memory.keys():
@@ -59,6 +63,11 @@ def update_memory_inspector():
         # Machine States
         memory_inspector.appendPlainText("Halted State: " + str(machine_instance.halted))
         memory_inspector.appendPlainText("Accept State: " + str(machine_instance.accepted))
+
+        # Update the machine graph
+        graph_abstract_machine(machine_instance.logic, machine_instance.current_state)
+        machine_graph.setPixmap(QPixmap("./graph_abstract_machine.png").scaled(600, 600, aspectRatioMode=QtCore.Qt.AspectRatioMode.KeepAspectRatio, transformMode=QtCore.Qt.TransformationMode.SmoothTransformation))
+        os.remove("./graph_abstract_machine.png")
         
     except Exception as e:
         log("Error: " + str(e))

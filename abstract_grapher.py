@@ -194,22 +194,31 @@ def my_draw_networkx_edge_labels(
 
     return text_items
 
-def graph_abstract_machine(logic):
+def graph_abstract_machine(logic, current_state=None):
     plt.figure(figsize=(10,10))
     G = nx.DiGraph()
     edge_list = build_edge_list(logic)
     G.add_edges_from(edge_list)
-    pos = nx.spring_layout(G)
-    nx.draw_networkx_nodes(G, pos, node_color="yellow")
+    node_colors = []
+    for node in G.nodes():
+        if node == current_state:
+            node_colors.append("cyan")
+        else:
+            node_colors.append("yellow")
+    if "cyan" not in node_colors:
+        node_colors[0] = "cyan"
+    pos = nx.spring_layout(G, seed=42)
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=2000, edgecolors="black", margins=0.01)
     nx.draw_networkx_labels(G, pos)
     curved_edges = [edge for edge in G.edges() if reversed(edge) in G.edges()]
     straight_edges = list(set(G.edges()) - set(curved_edges))
-    nx.draw_networkx_edges(G, pos, edgelist=straight_edges)
-    arc_rad = 0.15
-    nx.draw_networkx_edges(G, pos, edgelist=curved_edges, connectionstyle=f'arc3, rad = {arc_rad}')
+    nx.draw_networkx_edges(G, pos, edgelist=straight_edges, node_size=2000)
+    arc_rad = 0.25
+    nx.draw_networkx_edges(G, pos, edgelist=curved_edges, connectionstyle=f'arc3, rad = {arc_rad}', node_size=2000)
     edge_weights = nx.get_edge_attributes(G,'w')
     curved_edge_labels = {edge: edge_weights[edge] for edge in curved_edges}
     straight_edge_labels = {edge: edge_weights[edge] for edge in straight_edges}
     my_draw_networkx_edge_labels(G, pos, edge_labels=curved_edge_labels,rotate=False,rad = arc_rad)
     nx.draw_networkx_edge_labels(G, pos, edge_labels=straight_edge_labels,rotate=False)
     plt.savefig("graph_abstract_machine.png")
+    plt.close()
