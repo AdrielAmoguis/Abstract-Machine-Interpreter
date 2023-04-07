@@ -126,6 +126,7 @@ def run_machine():
 
 def slow_run_machine():
     global machine_instance
+    global step_machine
     try:
         # Run the "step_machine" function in a separate thread
         def run():
