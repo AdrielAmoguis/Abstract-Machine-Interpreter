@@ -15,6 +15,7 @@ class AbstractMachineSimulator:
         self.halted = False
         self.current_state = None
         self.input_tapehead_idx = 0
+        self.output = []
         
         # Memory
         self.memory = {}
@@ -176,7 +177,7 @@ class AbstractMachineSimulator:
             symbol_buffer = list(keys)[0]
 
             # Print the symbol buffer
-            print(symbol_buffer)
+            self.output.append(symbol_buffer)
             if verbose: print("Printed symbol " + symbol_buffer)
 
             # Transition to the next state

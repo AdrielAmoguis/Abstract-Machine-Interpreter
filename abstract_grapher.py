@@ -212,4 +212,4 @@ def graph_abstract_machine(logic):
     straight_edge_labels = {edge: edge_weights[edge] for edge in straight_edges}
     my_draw_networkx_edge_labels(G, pos, edge_labels=curved_edge_labels,rotate=False,rad = arc_rad)
     nx.draw_networkx_edge_labels(G, pos, edge_labels=straight_edge_labels,rotate=False)
-    plt.show()
+    plt.savefig("graph_abstract_machine.png")
