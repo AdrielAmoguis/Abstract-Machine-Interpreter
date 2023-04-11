@@ -75,6 +75,9 @@ class Tape:
         self.tape = {}
         self.head = 0
 
+        self.tape[0] = "#"
+        self.tape[1] = "#"
+
     def write(self, value):
         self.tape[self.head] = value
 
