@@ -20,7 +20,11 @@ def build_edge_list(logic):
         for t in logic[key]["arguments"]:
             t = t.split(",")
             transition = (t[0][1:], t[1][:-1])
-            edge_list.append((key, transition[1], {'w': transition[0]}))
+            instruction = state_name_mappings[logic[key]["instruction"].split("(")[0]]
+            if "(" in logic[key]["instruction"]:
+                instruction += "(" + logic[key]["instruction"].split("(")[1][:-1] + ")"
+            edge_label = f"{instruction}: {transition[0]}"
+            edge_list.append((key, transition[1], {'w': edge_label}))
     return edge_list
 
 # The following code has been taken from StackOverflow.

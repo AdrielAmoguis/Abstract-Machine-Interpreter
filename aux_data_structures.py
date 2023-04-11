@@ -91,6 +91,11 @@ class Tape:
             self.head -= 1
         else:
             raise ValueError("Invalid direction: " + direction)
+        
+        # If we go past the rightmost cell, create a new cell
+        if self.head > max(self.tape.keys()):
+            self.tape[self.head] = "#"
+            self.tape[self.head+1] = "#"
 
     def get_tape(self):
         return self.tape

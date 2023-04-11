@@ -10,7 +10,7 @@
 # Dependency Imports
 import sys, os, time
 from threading import Thread
-from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QPlainTextEdit, QLineEdit, QGroupBox, QFormLayout, QPushButton, QLayout
+from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QPlainTextEdit, QLineEdit, QGroupBox, QFormLayout, QPushButton, QLayout, QCheckBox
 from PyQt6.QtGui import QPixmap, QFontDatabase
 from PyQt6 import QtCore
 
@@ -96,7 +96,7 @@ def compile_machine():
                 is_turing_machine = True
                 break
         machine_instance.set_input_tape(input_tape.text(), is_turing_machine=is_turing_machine)
-        log("Turing machine detected. Input tape set to first aux memory tape.")
+        if is_turing_machine: log("Turing machine detected. Input tape set to first aux memory tape.")
 
         log("Using input tape: " + str(machine_instance.input_tape))
 
@@ -113,7 +113,7 @@ def step_machine():
             log("Machine is halted.")
             return
 
-        machine_instance.step()
+        machine_instance.step(verbose=verbose_checkbox.isChecked(), logger=log)
         log("Machine stepped successfully.")
         update_memory_inspector()
     except Exception as e:
@@ -127,7 +127,7 @@ def run_machine():
             log("Machine is halted.")
             return
         
-        machine_instance.run()
+        machine_instance.run(verbose=verbose_checkbox.isChecked(), logger=log)
         log("Machine ran successfully.")
         update_memory_inspector()
     except Exception as e:
@@ -159,6 +159,7 @@ monospaced_font.setPointSize(12)
 machine_description.setFont(monospaced_font)
 machine_description.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 execution_panel = QGroupBox("Execution Panel")
+verbose_checkbox = QCheckBox("Verbose Execution")
 input_tape = QLineEdit()
 input_tape.setPlaceholderText("#aaabbbccc12344321#")
 input_tape.setText("##")
@@ -178,6 +179,7 @@ btn_slow_run.setDisabled(True)
 btn_run_machine.setDisabled(True)
 execution_panel_layout = QFormLayout()
 execution_panel_layout.addRow(QLabel("Input Tape:"), input_tape)
+execution_panel_layout.addRow(verbose_checkbox)
 execution_panel_layout.addRow(btn_compile_machine)
 execution_panel_layout.addRow(btn_step_machine)
 execution_panel_layout.addRow(btn_slow_run)
